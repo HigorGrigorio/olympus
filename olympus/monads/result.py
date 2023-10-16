@@ -24,6 +24,7 @@ Example:
     ok(1)
 """
 
+from inspect import signature
 from typing import overload, Generic, Callable, Any, List, TypeVar
 
 from .guards import GuardResult
@@ -120,7 +121,19 @@ class Result(Generic[T]):
         """
         pass
 
-    def bind(self, f: Callable[[T | None], 'Result[U]|U']) -> 'Result[U]':
+    @overload
+    def bind(self, f: Callable[[], 'Result[U] | U']) -> 'Result[U]':
+        ...
+
+    @overload
+    def bind(self, f: Callable[[T], 'Result[U] | U']) -> 'Result[U]':
+        ...
+
+    @overload
+    def bind(self, f: Callable[[T, str | Exception], 'Result[U] | U']) -> 'Result[U]':
+        ...
+
+    def bind(self, f: Callable[..., 'Result[U] | U']) -> 'Result[U]':
         """
         Binds the Result to a function that returns a Result. Util for chaining
         Result-returning functions.
@@ -145,7 +158,14 @@ class Result(Generic[T]):
         if self.isFailure:
             return self
 
-        other = f(self.value)
+        f_signature = signature(f)
+
+        if len(f_signature.parameters) == 0:
+            other = f()
+        elif len(f_signature.parameters) == 1:
+            other = f(self.value)
+        else:
+            other = f(self.value, self.error)
 
         if not isinstance(other, Result):
             other = Result.ok(other)

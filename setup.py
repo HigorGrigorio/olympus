@@ -9,7 +9,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="olympus",
-    version="0.0.1",
+    version="0.1.0",
     author="Higor Grigorio",
     author_email="higorgrigorio@gmail.com",
     description="A library for functional programming in Python.",
