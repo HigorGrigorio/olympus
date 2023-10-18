@@ -2,9 +2,12 @@
 # (C) 2023 Higor Grigorio (higorgrigorio@gmail.com)  (MIT License)
 # -----------------------------------------------------------------------------
 
-import setuptools
+# coding: utf-8
 
-with open("README.md", "r") as fh:
+import setuptools
+import os
+
+with open(os.path.join('/', 'README.md'), encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(
