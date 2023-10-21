@@ -20,9 +20,9 @@ Example:
     Left(ZeroDivisionError('division by zero'))
     >>> divide(1, 1)
     Right(1.0)
-    >>> divide(1, 0).isLeft
+    >>> divide(1, 0).is_left
     True
-    >>> divide(1, 0).isRight
+    >>> divide(1, 0).is_right
     False
 """
 
@@ -38,20 +38,20 @@ class Either(Generic[L, R]):
     """
 
     def __init__(self, value: L | R, is_left: bool):
-        self.isLeft = is_left
-        self.isRight = not is_left
+        self.is_left = is_left
+        self.is_right = not is_left
         self.value = value
 
     def __repr__(self):
-        return f"{'Left' if self.isLeft else 'Right'}({self.value})"
+        return f"{'Left' if self.is_left else 'Right'}({self.value})"
 
     def __eq__(self, other):
         """ Two Either are equal if they are both Left or Right and have the same value. """
-        return self.isLeft == other.isLeft and self.value == other.value
+        return self.is_left == other.is_left and self.value == other.value
 
     def __bool__(self):
         """ An Either is True if it is Right. """
-        return self.isRight
+        return self.is_right
 
     @staticmethod
     def left(value: L = None) -> 'Either[L, R]':
@@ -81,10 +81,10 @@ class Either(Generic[L, R]):
             >>> either.amap(right(1))
             Left(<function <lambda> at 0x7f8d3b7d3b80>)
         """
-        if self.isLeft:
+        if self.is_left:
             return self
 
-        if other.isLeft:
+        if other.is_left:
             return other
 
         return Either.right(self.value(other.value))
@@ -103,7 +103,7 @@ class Either(Generic[L, R]):
             >>> either.map(lambda x: x + 1)
             Left(1)
         """
-        return self if self.isLeft else Either[R, S].right(f(self.value))
+        return self if self.is_left else Either[R, S].right(f(self.value))
 
     def bind(self, f: Callable[[R], 'Either[L, S]']) -> 'Either[L, S]':
         """
@@ -119,7 +119,7 @@ class Either(Generic[L, R]):
             >>> either.bind(lambda x: right(x + 1))
             Left(1)
         """
-        return self if self.isLeft else f(self.value)
+        return self if self.is_left else f(self.value)
 
     def plain(self):
         """

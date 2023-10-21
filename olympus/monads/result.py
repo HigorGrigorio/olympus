@@ -35,18 +35,18 @@ S = TypeVar('S')
 
 
 class Result(Generic[T]):
-    def __init__(self, isSuccess: bool, value: T = None, error: str | Exception | T = None):
+    def __init__(self, is_ok: bool, value: T = None, error: str | Exception | T = None):
         self.value = value
         self.error = error
-        self.isSuccess = isSuccess
-        self.isFailure = not isSuccess
+        self.is_ok = is_ok
+        self.is_err = not is_ok
 
     def __bool__(self):
         """ Allows the Result to be used in a boolean expression. """
-        return self.isSuccess
+        return self.is_ok
 
     def __repr__(self):
-        if self.isSuccess:
+        if self.is_ok:
             return f'Result.ok({self.value})'
         return f'Result.fail({self.error})'
 
@@ -58,7 +58,7 @@ class Result(Generic[T]):
         :return: The value.
         """
 
-        if self.isSuccess:
+        if self.is_ok:
             return self.value
         print(self.error)
         raise RuntimeError('Cannot get value of a failed result')
@@ -73,7 +73,7 @@ class Result(Generic[T]):
         :return: The value.
         """
 
-        if self.isSuccess:
+        if self.is_ok:
             return self.value
         return default(self.error)
 
@@ -85,7 +85,7 @@ class Result(Generic[T]):
         :return: The error.
         """
 
-        if self.isFailure:
+        if self.is_failure:
             return self.error
 
         raise RuntimeError('Cannot get error of a successful result')
@@ -110,7 +110,7 @@ class Result(Generic[T]):
         :return: The value.
         """
 
-        if self.isFailure:
+        if self.is_failure:
             raise ValueError(self.error)
 
         return self.value
@@ -155,7 +155,7 @@ class Result(Generic[T]):
         :param f:
         :return:
         """
-        if self.isFailure:
+        if self.is_failure:
             return self
 
         f_signature = signature(f)
@@ -227,7 +227,7 @@ class Result(Generic[T]):
         values = []
 
         for result in results:
-            if result.isFailure:
+            if result.is_failure:
                 return Result.fail(result.err())
             values.append(result.unwrap())
         return Result.ok(tuple(values))

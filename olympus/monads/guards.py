@@ -89,17 +89,17 @@ class GuardResult:
         object.__setattr__(self, 'success', success)
         object.__setattr__(self, 'message', message)
 
-    def is_valid(self):
+    def is_satisfied(self):
         return object.__getattribute__(self, 'success')
 
     def get_message(self):
         return object.__getattribute__(self, 'message')
 
     def __bool__(self):
-        return self.is_valid()
+        return self.is_satisfied()
 
     def __repr__(self):
-        if self.is_valid():
+        if self.is_satisfied():
             return f'ok()'
         return f'fail({self.get_message()})'
 
@@ -710,7 +710,7 @@ class Guards:
         otherwise, return True.
         """
         for result in results:
-            if not result.is_valid():
+            if not result.is_satisfied():
                 return result
         return GuardResult(True, None)
 
