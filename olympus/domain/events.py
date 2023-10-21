@@ -17,13 +17,13 @@ class DomainEvent(ABC):
     happened in the domain.
     """
 
-    createdAt: datetime
+    created_at: datetime
 
     def __init__(self):
         """
         Creates a new instance of DomainEvent.
         """
-        self.createAt = None
+        self.created_at = datetime.now()
 
     @abstractmethod
     def get_aggregate_id(self) -> Guid:
