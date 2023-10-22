@@ -571,11 +571,16 @@ class Guards:
     """
     __guards__: Dict[str, Type[IGuarder]] = {}
 
+    """
+    A dictionary for caching guards statements.
+    """
+    __cache__: Dict[str, 'CompoundedGuard'] = {}
+
     def __new__(cls):
         raise Exception("Cannot instantiate Guards class")
 
     @classmethod
-    def register(cls, name: str, guarder: Type[IGuarder]) -> NoReturn:
+    def register(cls, name: str, g: Type[IGuarder]) -> NoReturn:
         """
         Registers a guard. The guarders must be unique by name.
 
@@ -584,14 +589,14 @@ class Guards:
             KeyError: If the guard already exists.
 
         :param name: The guard name.
-        :param guarder: The guard class.
+        :param g: The guard class.
 
         :return: Returns nothing.
         """
         if cls.has(name):
-            raise KeyError(f"Guard {name} is already defined in Guarder")
+            raise KeyError(f"Guard {name} is already defined")
 
-        cls.__guards__[name] = guarder
+        cls.__guards__[name] = g
 
     @classmethod
     def get(cls, name: str) -> Type[IGuarder]:
@@ -642,7 +647,7 @@ class Guards:
 
             for raw in raw_guards:
                 if not cls.has(raw[1]):
-                    raise KeyError(f"Guard {raw[1]} is not defined in Guarder")
+                    raise KeyError(f"Guard {raw[1]} is not defined")
 
                 guards.append(cls.get(raw[1]).new(*raw))
 
@@ -684,15 +689,18 @@ class Guards:
         """
 
         try:
-            guards = cls.resolve(statement)
+            if statement in cls.__cache__:  # use cache
+                g = cls.__cache__[statement]
+            else:
+                # stores in cache
+                g = cls.__cache__[statement] = CompoundedGuard(cls.resolve(statement))
 
-            for g in guards:
-                result = g.is_satisfied_by(arg)
+            result = g.is_satisfied_by(arg)
 
-                if not result:
-                    if message:
-                        return GuardResult(False, message)
-                    return result
+            if not result:
+                if message:
+                    return GuardResult(False, message)
+                return result
 
             return GuardResult(True, None)
         except Exception as e:
@@ -842,13 +850,14 @@ def combine(results: List[GuardResult]) -> GuardResult:
     return Guards.combine(results)
 
 
-def guarder(name: str) -> NoReturn:
+def guarder(name: str):
     """
     A decorator for registering rules.
     """
 
     def decorator(cls: Type[IGuarder]):
         Guards.register(name, cls)
+        return cls
 
     return decorator
 
@@ -945,7 +954,12 @@ class Required(AbstractGuard):
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
 
-        if value is None or self.negate:
+        if type(value) in [str, list, tuple, dict]:
+            is_present = len(value) != 0
+        else:
+            is_present = value is not None
+
+        if (self.negate and is_present) or not is_present:
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -968,7 +982,12 @@ class Empty(AbstractGuard):
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
 
-        if len(value) > 0 or self.negate:
+        if type(value) in [str, list, tuple, dict]:
+            is_empty = len(value) == 0
+        else:
+            is_empty = value is None
+
+        if (self.negate and is_empty) or not is_empty:
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -990,8 +1009,9 @@ class Length(AbstractGuard):
 
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
+        is_length = len(value) == self.args[0]
 
-        if len(value) != self.args[0] or self.negate:
+        if (self.negate and is_length) or not is_length:
             return GuardResult(False, self.parse(name=argument['name'], length=self.args[0]))
 
         return GuardResult(True, None)
@@ -1014,7 +1034,12 @@ class Between(AbstractGuard):
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
 
-        if len(value) < self.args[0] or len(value) > self.args[1] or self.negate:
+        if type(value) in [str, list, tuple, dict]:
+            value = len(value)
+
+        is_between = self.args[0] <= value <= self.args[1]
+
+        if (self.negate and is_between) or not is_between:
             return GuardResult(False, self.parse(name=argument['name'], min=self.args[0], max=self.args[1]))
 
         return GuardResult(True, None)
@@ -1036,8 +1061,9 @@ class Regex(AbstractGuard):
 
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
+        is_match = re.match(self.args[0], value)
 
-        if not re.match(self.args[0], value) or self.negate:
+        if (self.negate and is_match) or not is_match:
             return GuardResult(False, self.parse(name=argument['name'], regex=self.args[0]))
 
         return GuardResult(True, None)
@@ -1059,8 +1085,9 @@ class In(AbstractGuard):
 
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
+        is_in = value in self.args
 
-        if value not in self.args[0] or self.negate:
+        if (self.negate and is_in) or not is_in:
             return GuardResult(False, self.parse(name=argument['name'], list=self.args[0]))
 
         return GuardResult(True, None)
@@ -1082,8 +1109,9 @@ class LessThanOrEqual(AbstractGuard):
 
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
+        is_less_or_equal = value <= self.args[0]
 
-        if value > self.args[0] or self.negate:
+        if (self.negate and is_less_or_equal) or not is_less_or_equal:
             return GuardResult(False, self.parse(name=argument['name'], max=self.args[0]))
 
         return GuardResult(True, None)
@@ -1105,8 +1133,9 @@ class LessThan(AbstractGuard):
 
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
+        is_less = value < self.args[0]
 
-        if value >= self.args[0] or self.negate:
+        if (self.negate and is_less) or not is_less:
             return GuardResult(False, self.parse(name=argument['name'], max=self.args[0]))
 
         return GuardResult(True, None)
@@ -1128,8 +1157,9 @@ class GreaterThanOrEqual(AbstractGuard):
 
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
+        is_greater = value >= self.args[0]
 
-        if value < self.args[0] or self.negate:
+        if (self.negate and is_greater) or not is_greater:
             return GuardResult(False, self.parse(name=argument['name'], min=self.args[0]))
 
         return GuardResult(True, None)
@@ -1151,8 +1181,9 @@ class GreaterThan(AbstractGuard):
 
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
+        is_greater = value > self.args[0]
 
-        if value <= self.args[0] or self.negate:
+        if (self.negate and is_greater) or not is_greater:
             return GuardResult(False, self.parse(name=argument['name'], min=self.args[0]))
 
         return GuardResult(True, None)
@@ -1174,8 +1205,9 @@ class Odd(AbstractGuard):
 
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
+        is_odd = value % 2 != 0
 
-        if value % 2 == 0 or self.negate:
+        if (self.negate and is_odd) or not is_odd:
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -1197,8 +1229,9 @@ class Even(AbstractGuard):
 
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
+        is_even = value % 2 == 0
 
-        if value % 2 != 0 or self.negate:
+        if (self.negate and is_even) or not is_even:
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -1220,8 +1253,9 @@ class Positive(AbstractGuard):
 
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
+        is_positive = value >= 0
 
-        if value <= 0 or self.negate:
+        if (self.negate and is_positive) or not is_positive:
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -1243,8 +1277,9 @@ class Negative(AbstractGuard):
 
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
+        is_negative = value < 0
 
-        if value >= 0 or self.negate:
+        if (self.negate and is_negative) or not is_negative:
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -1267,13 +1302,51 @@ class Equal(AbstractGuard):
     def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
         value = argument['value']
 
-        if value != self.args[0] or self.negate:
+        try:
+            is_equal = value == self.args[0]
+        except IndexError:
+            is_equal = False
+
+        if (self.negate and is_equal) or not is_equal:
             return GuardResult(False, self.parse(name=argument['name'], value=self.args[0]))
 
         return GuardResult(True, None)
 
     def __repr__(self):
         return f"Equal({self.negate}, {self.args})"
+
+    def __str__(self):
+        return self.__repr__()
+
+
+class CompoundedGuard(AbstractGuard):
+    """
+    A compound guard. A compound guard is a guard that contains other guards.
+    The main purpose of this class is to combine guards into a unique guard to
+    be used in cache.
+    """
+
+    """
+    The guard list.
+    """
+    guards: List[IGuarder]
+
+    def __init__(self, guards: List[IGuarder]):
+        super().__init__(False, 'CompoundedGuard', None)
+        self.guards = guards
+
+    def is_satisfied_by(self, argument: GuardArgument) -> GuardResult:
+
+        for obj in self.guards:
+            r = obj.is_satisfied_by(argument)
+
+            if not r:
+                return r
+
+        return GuardResult(True, None)
+
+    def __repr__(self):
+        return f"CompoundedGuard({self.negate}, {self.name}, {self.guards})"
 
     def __str__(self):
         return self.__repr__()
