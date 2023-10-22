@@ -21,13 +21,24 @@ class Guid:
     This class represents a GUID. It is used to identify an entity.
     """
 
-    @staticmethod
-    def new() -> 'Guid':
+    @classmethod
+    def new(cls) -> 'Guid':
         """
         Creates a GUID.
-        :return: Returns a Guid instance with a uuid4 string.
+
+        :return: Returns a Guid instance with an uuid4 string.
         """
-        return Guid(str(uuid.uuid4()))
+        return cls(str(uuid.uuid4()))
+
+    @classmethod
+    def from_string(cls, value: str) -> 'Guid':
+        """
+        Creates a GUID from a string.
+
+        :param value: The string value.
+        :return: Returns a Guid instance with the given string.
+        """
+        return cls(value)
 
     def __init__(self, value: str = None):
         self.value = value or self.new()
