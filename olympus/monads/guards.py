@@ -987,7 +987,7 @@ class Empty(AbstractGuard):
         else:
             is_empty = value is None
 
-        if (self.negate and is_empty) or not is_empty:
+        if (self.negate and not is_empty) or is_empty:
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
