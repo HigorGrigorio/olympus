@@ -959,7 +959,7 @@ class Required(AbstractGuard):
         else:
             is_present = value is not None
 
-        if (self.negate and is_present) or not is_present:
+        if (self.negate and is_present) or (not self.negate and not is_present):
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -987,7 +987,7 @@ class Empty(AbstractGuard):
         else:
             is_empty = value is None
 
-        if (self.negate and is_empty) or not is_empty:
+        if (self.negate and is_empty) or (not self.negate and not is_empty):
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -1011,7 +1011,7 @@ class Length(AbstractGuard):
         value = argument['value']
         is_length = len(value) == self.args[0]
 
-        if (self.negate and is_length) or not is_length:
+        if (self.negate and is_length) or (not self.negate and not is_length):
             return GuardResult(False, self.parse(name=argument['name'], length=self.args[0]))
 
         return GuardResult(True, None)
@@ -1039,7 +1039,7 @@ class Between(AbstractGuard):
 
         is_between = self.args[0] <= value <= self.args[1]
 
-        if (self.negate and is_between) or not is_between:
+        if (self.negate and is_between) or (not self.negate and not is_between):
             return GuardResult(False, self.parse(name=argument['name'], min=self.args[0], max=self.args[1]))
 
         return GuardResult(True, None)
@@ -1063,7 +1063,7 @@ class Regex(AbstractGuard):
         value = argument['value']
         is_match = re.match(self.args[0], value)
 
-        if (self.negate and is_match) or not is_match:
+        if (self.negate and is_match) or (not self.negate and not is_match):
             return GuardResult(False, self.parse(name=argument['name'], regex=self.args[0]))
 
         return GuardResult(True, None)
@@ -1087,7 +1087,7 @@ class In(AbstractGuard):
         value = argument['value']
         is_in = value in self.args
 
-        if (self.negate and is_in) or not is_in:
+        if (self.negate and is_in) or (not self.negate and not is_in):
             return GuardResult(False, self.parse(name=argument['name'], list=self.args[0]))
 
         return GuardResult(True, None)
@@ -1111,7 +1111,7 @@ class LessThanOrEqual(AbstractGuard):
         value = argument['value']
         is_less_or_equal = value <= self.args[0]
 
-        if (self.negate and is_less_or_equal) or not is_less_or_equal:
+        if (self.negate and is_less_or_equal) or (not self.negate and not is_less_or_equal):
             return GuardResult(False, self.parse(name=argument['name'], max=self.args[0]))
 
         return GuardResult(True, None)
@@ -1135,7 +1135,7 @@ class LessThan(AbstractGuard):
         value = argument['value']
         is_less = value < self.args[0]
 
-        if (self.negate and is_less) or not is_less:
+        if (self.negate and is_less) or (not self.negate and not is_less):
             return GuardResult(False, self.parse(name=argument['name'], max=self.args[0]))
 
         return GuardResult(True, None)
@@ -1159,7 +1159,7 @@ class GreaterThanOrEqual(AbstractGuard):
         value = argument['value']
         is_greater = value >= self.args[0]
 
-        if (self.negate and is_greater) or not is_greater:
+        if (self.negate and is_greater) or (not self.negate and not is_greater):
             return GuardResult(False, self.parse(name=argument['name'], min=self.args[0]))
 
         return GuardResult(True, None)
@@ -1183,7 +1183,7 @@ class GreaterThan(AbstractGuard):
         value = argument['value']
         is_greater = value > self.args[0]
 
-        if (self.negate and is_greater) or not is_greater:
+        if (self.negate and is_greater) or (not self.negate and not is_greater):
             return GuardResult(False, self.parse(name=argument['name'], min=self.args[0]))
 
         return GuardResult(True, None)
@@ -1207,7 +1207,7 @@ class Odd(AbstractGuard):
         value = argument['value']
         is_odd = value % 2 != 0
 
-        if (self.negate and is_odd) or not is_odd:
+        if (self.negate and is_odd) or (not self.negate and not is_odd):
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -1231,7 +1231,7 @@ class Even(AbstractGuard):
         value = argument['value']
         is_even = value % 2 == 0
 
-        if (self.negate and is_even) or not is_even:
+        if (self.negate and is_even) or (not self.negate and not is_even):
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -1255,7 +1255,7 @@ class Positive(AbstractGuard):
         value = argument['value']
         is_positive = value >= 0
 
-        if (self.negate and is_positive) or not is_positive:
+        if (self.negate and is_positive) or (not self.negate and not is_positive):
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -1279,7 +1279,7 @@ class Negative(AbstractGuard):
         value = argument['value']
         is_negative = value < 0
 
-        if (self.negate and is_negative) or not is_negative:
+        if (self.negate and is_negative) or (not self.negate and not is_negative):
             return GuardResult(False, self.parse(name=argument['name']))
 
         return GuardResult(True, None)
@@ -1307,7 +1307,7 @@ class Equal(AbstractGuard):
         except IndexError:
             is_equal = False
 
-        if (self.negate and is_equal) or not is_equal:
+        if (self.negate and is_equal) or (not self.negate and not is_equal):
             return GuardResult(False, self.parse(name=argument['name'], value=self.args[0]))
 
         return GuardResult(True, None)
