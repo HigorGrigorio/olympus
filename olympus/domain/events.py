@@ -106,13 +106,13 @@ class EventBus:
         raise Exception('Cannot instantiate EventBus class. It is a static class.')
 
     @staticmethod
-    def bind(event: Type[T], handler: CallableEventHandler):
+    def bind(event: Type[T] | str, handler: CallableEventHandler):
         """
         Binds a handler to an event.
         :param event: The event.
         :param handler: The handler.
         """
-        key = event.__name__
+        key = event.__name__ if not (type(event) in [str]) else event
 
         if key not in EventBus.__handlers__:
             EventBus.__handlers__[key] = []
@@ -208,7 +208,7 @@ def trigger(data: DomainEvent | List[DomainEvent] | 'AggregateRoot[Any]'):
     EventBus.dispatch(data)
 
 
-def bind(event: Type[T], cb: CallableEventHandler):
+def bind(event: Type[T] | str, cb: CallableEventHandler):
     """
     Binds a handler to an event.
 
