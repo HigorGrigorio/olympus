@@ -26,7 +26,7 @@ Example:
     False
 """
 
-from typing import Generic, TypeVar, Callable
+from typing import Generic, TypeVar, Callable, Any
 
 L = TypeVar('L')
 R = TypeVar('R')
@@ -135,7 +135,7 @@ def left(value: L) -> Either[L, R]:
     return Either.left(value)
 
 
-def right(value: S) -> Either[L, S]:
+def right(value: R) -> Either[L, R]:
     """
     Creates an Either with a right value.
     """
