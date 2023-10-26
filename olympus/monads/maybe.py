@@ -323,3 +323,26 @@ def just(value):
     :return: Returns a Maybe with a value.
     """
     return Maybe.just(value)
+
+
+def optional(value):
+    """
+    Creates a Maybe with a value if the value is not None. Otherwise,
+    returns a Maybe with no value.
+
+    Example:
+
+        >>> optional(1)
+        Maybe.just(1)
+
+        >>> optional(None)
+        Maybe()
+
+    :param value: The value.
+
+    :return: Returns a Maybe with a value or no value.
+    """
+    if value is None:
+        return Nothing
+    else:
+        return Maybe.just(value)
