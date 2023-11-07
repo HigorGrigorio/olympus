@@ -34,7 +34,9 @@ class DomainEvent(ABC):
         ...
 
 
-CallableEventHandler = Callable[[DomainEvent], None]
+DE = TypeVar('DE', bound=DomainEvent)
+
+CallableEventHandler = Callable[[DE], None]
 
 E = TypeVar('E')
 
