@@ -25,7 +25,7 @@ Example:
 """
 
 from inspect import signature
-from typing import overload, Generic, Callable, Any, List, TypeVar
+from typing import overload, Generic, Callable, Any, List, TypeVar, Union
 
 from .guards import GuardResult
 
@@ -135,10 +135,12 @@ class Result(Generic[T]):
 
     def bind(self, f: Callable[..., 'Result[U] | U']) -> 'Result[U]':
         """
-        Binds the Result to a function that returns a Result. Util for chaining
-        Result-returning functions.
+        Binds the Result to a function when the Result is a success. If the Result is a
+        failure, the Result will be returned.
 
-        Example:
+        -------
+        Example
+        -------
 
             >>> def divide(x: int, y: int) -> Result[int]:
             ...     if y == 0:
@@ -152,28 +154,130 @@ class Result(Generic[T]):
             fail('Cannot divide by zero.')
 
             >>> divide(1, 1).bind(lambda x: multiply())
-        :param f:
-        :return:
+
+        Arguments
+        ---------
+        f : Callable[..., 'Result[U] | U']
+            The function to be called if the Result is a success.
+
+        Returns
+        -------
+        Result[U]
+            The Result of the function call.
+
+
         """
-        if self.is_err:
-            return self
 
-        f_signature = signature(f)
+        parameters = len(signature(f).parameters)
 
-        if len(f_signature.parameters) == 0:
-            other = f()
-        elif len(f_signature.parameters) == 1:
-            other = f(self.value)
-        else:
+        other: Result[U] | U = None
+
+        if parameters == 2:
             other = f(self.value, self.error)
+        elif not self.is_err:
+            if parameters == 0:
+                other = f()
+            elif parameters == 1:
+                other = f(self.value)
+        else:
+            return self
 
         if not isinstance(other, Result):
             other = Result.ok(other)
 
         return other
 
-    @staticmethod
-    def ok(value: T = None) -> 'Result[T]':
+    def if_err(self, f: Callable[..., 'Result[U] | U']) -> 'Result[U]':
+        """
+        Binds the Result to a function if the Result is a failure. Util for chaining
+        Result-returning functions.
+
+        -------
+        Example
+        -------
+
+            >>> def divide(x: int, y: int) -> Result[int]:
+            ...     if y == 0:
+            ...         return Result.fail("Cannot divide by zero.")
+            ...     else:
+            ...         return Result.ok(int(x / y))
+
+            >>> divide(1, 0).if_err(lambda: -1)
+            ok(-1)
+
+        Arguments
+        ---------
+        f : Callable[..., 'Result[U] | U']
+            The function to be called if the Result is a failure.
+
+        Returns
+        -------
+        Result[U]
+            The Result of the function call.
+        """
+        if self.is_ok:
+            return self
+
+        parameters = len(signature(f).parameters)
+
+        if parameters > 1:
+            raise ValueError('The function f() must have 0 or 1 parameters.')
+
+        other = f(self.error) if parameters == 1 else f()
+
+        if not isinstance(other, Result):
+            other = Result.ok(other)
+
+        return other
+
+    def bind_if(self, condition: Union[Callable[..., bool], bool], f: Callable[..., 'Result[U] | U']) -> 'Result[U]':
+        """
+        Binds the Result if a condition is met. Util for chaining Result-returning functions.
+
+        -------
+        Example
+        -------
+
+            >>> def divide(x: int, y: int) -> Result[int]:
+            ...     if y == 0:
+            ...         return Result.fail("Cannot divide by zero.")
+            ...     else:
+            ...         return Result.ok(int(x / y))
+            >>> def multiply(x: int, y: int) -> Result[int]:
+            ...     return Result.ok(int(x * y))
+
+            >>> divide(1, 0).bind_if(lambda x: x > 0, lambda x: multiply(x, 2))
+            fail('Cannot divide by zero.')
+
+            >>> divide(1, 1).bind_if(lambda x: x > 0, lambda x: multiply(x, 2))
+            ok(2)
+
+            >>> y = random.randint(0, 1)
+            >>> divide(1, y).bind_if(y != 0, lambda x: multiply(x, 2))
+            ok(2)
+
+        Arguments
+        -------
+        condition : Union[Callable[..., bool], bool]
+            The condition to be met.
+        f : Callable[..., 'Result[U] | U']
+            The function to be called if the Result is a failure.
+
+        Returns
+        -------
+        Result[U]
+            The Result of the function call.
+        """
+        if self.is_err:
+            return self
+
+        if condition(self.value) if callable(condition) else condition:
+            return self.bind(f)
+
+        return self
+
+    @classmethod
+    def ok(cls, value: T = None) -> 'Result[T]':
         """
         Creates a successful Result.
 
@@ -186,10 +290,10 @@ class Result(Generic[T]):
 
         :return: A Result instance.
         """
-        return Result(True, value, None)
+        return cls(True, value, None)
 
-    @staticmethod
-    def fail(error: str | Exception) -> 'Result[T]':
+    @classmethod
+    def fail(cls, error: str | Exception) -> 'Result[T]':
         """
         Creates a failed Result.
 
@@ -205,8 +309,22 @@ class Result(Generic[T]):
         """
         return Result(False, None, error)
 
-    @staticmethod
-    def combine(results: List['Result[Any]']) -> 'Result[tuple[Any, ...]]':
+    @classmethod
+    def with_bool(cls, condition: bool, value: T) -> 'Result[T]':
+        """
+        Creates a Result from a boolean condition.
+
+        :param condition: The condition.
+        :param value: The value.
+
+        :return: A Result instance.
+        """
+        if condition:
+            return cls.ok(value)
+        return cls.fail(value)
+
+    @classmethod
+    def combine(cls, results: List['Result[Any]']) -> 'Result[tuple[Any, ...]]':
         """
         Combines a list of Results into a single Result containing a tuple of values. If any
         of the Results are failures, the first failure will be returned.
@@ -228,12 +346,12 @@ class Result(Generic[T]):
 
         for result in results:
             if result.is_err:
-                return Result.fail(result.err())
+                return cls.fail(result.err())
             values.append(result.unwrap())
-        return Result.ok(tuple(values))
+        return cls.ok(tuple(values))
 
-    @staticmethod
-    def from_guard(result: GuardResult):
+    @classmethod
+    def from_guard(cls, result: GuardResult):
         """
         A helper for chain guard results.
 
@@ -242,11 +360,11 @@ class Result(Generic[T]):
         :return: A Result instance.
         """
         if result:
-            return Result.ok()
-        return Result.fail(result.get_message())
+            return cls.ok()
+        return cls.fail(result.get_message())
 
-    @staticmethod
-    def from_exception(exception: Exception):
+    @classmethod
+    def from_exception(cls, exception: Exception):
         """
         Converts an Exception to a Result.
 
@@ -254,7 +372,7 @@ class Result(Generic[T]):
 
         :return: A Result instance.
         """
-        return Result.fail(exception.args[0])
+        return cls.fail(exception.args[0])
 
 
 @overload
