@@ -26,7 +26,11 @@ class Guid:
         """
         Creates a GUID.
 
-        :return: Returns a Guid instance with an uuid4 string.
+        -------
+        Returns
+        -------
+        Guid
+            A Guid instance.
         """
         return cls(str(uuid.uuid4()))
 
@@ -35,17 +39,37 @@ class Guid:
         """
         Creates a GUID from a string.
 
-        :param value: The string value.
-        :return: Returns a Guid instance with the given string.
+        ----------
+        Parameters
+        ----------
+        value : str
+            The string value of the GUID.
+
+        -------
+        Returns
+        -------
+        Guid
+            A Guid instance.
         """
         return cls(value)
 
     def __init__(self, value: str = None):
-        self.value = value or self.new()
+        """
+        Creates a GUID. If no value is provided, a new value is created
+        automatically, based on the UUID4 algorithm.
+
+        ----------
+        Parameters
+        ----------
+        value : str
+            The string value of the GUID.
+        """
+        self.value = value or str(uuid.uuid4())
 
     def __str__(self):
+        """ xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx """
         return self.value
 
     def __repr__(self):
         """ Guid('xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx') """
-        return f"Guid('{self.value}')"
+        return f"{self.__class__.__name__}('{self.value}')"
