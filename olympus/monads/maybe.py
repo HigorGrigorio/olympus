@@ -27,7 +27,7 @@ Example:
     >>> divide(1, 1)
     just(1)
 """
-
+from inspect import signature
 from typing import overload, Generic, TypeVar, Callable, Any, cast
 
 T = TypeVar('T')
@@ -61,15 +61,14 @@ class Maybe(Generic[T]):
         ...
 
     def __init__(self, /, *args: T) -> None:
+        """Creates a Maybe with a value or no value."""
         if len(args) == 0:
             self.value = Maybe.sentinel
         else:
             self.value = args[0]
 
     def __repr__(self, /) -> str:
-        """
-        Returns a string representation of the Maybe.
-        """
+        """Returns a string representation of the Maybe."""
 
         cls = type(self)
 
@@ -86,6 +85,24 @@ class Maybe(Generic[T]):
     def just(value: T, /) -> 'Maybe[T]':
         """
         Creates a Maybe with a value.
+
+        -------
+        Example
+        -------
+            >>> Maybe.just(1)
+            Maybe.just(1)
+
+        ----------
+        Parameters
+        ----------
+        value : T
+            The value.
+
+        -------
+        Returns
+        -------
+        Maybe[T]
+            A Maybe with a value.
         """
         return Maybe(value)
 
@@ -94,12 +111,30 @@ class Maybe(Generic[T]):
         """
         Creates a Maybe with no value. This is useful for representing
         optional values.
+
+        -------
+        Example
+        -------
+            >>> Maybe.nothing()
+            Maybe()
+
+        -------
+        Returns
+        -------
+        Maybe[Any]
+            A Maybe with no value.
         """
         return Maybe()
 
     def is_just(self) -> bool:
         """
         Returns True if the Maybe is a just value. Otherwise, returns False.
+
+        -------
+        Returns
+        -------
+        bool
+            True if the Maybe is a just value. Otherwise, returns False.
         """
         cls = type(self)
         return self.value is not cls.sentinel
@@ -115,7 +150,9 @@ class Maybe(Generic[T]):
         """
         Gets the value if is a just value. Otherwise, raises a exception.
 
-        Example:
+        -------
+        Example
+        -------
 
             >>> Maybe.just(1).get()
             1
@@ -123,6 +160,18 @@ class Maybe(Generic[T]):
             >>> Maybe().get()
             Traceback (most recent call last):
             ...
+
+        ------
+        Raises
+        ------
+        MissingValueError
+            If the Maybe has no value.
+
+        -------
+        Returns
+        -------
+        T
+            The value.
         """
 
         cls = type(self)
@@ -136,13 +185,27 @@ class Maybe(Generic[T]):
         """
         Helper function for mapping a function over a Maybe.f:
 
-        Example:
+        -------
+        Example
+        -------
 
             >>> Maybe.just(1).map(lambda x: x + 1)
             Maybe.just(2)
 
             >>> Maybe().map(lambda x: x + 1)
             Maybe()
+
+        ----------
+        Parameters
+        ----------
+        f : Callable[[T], U]
+            The function to map.
+
+        -------
+        Returns
+        -------
+        Maybe[U]
+            A Maybe.
         """
         cls = type(self)
         if self.value is cls.sentinel:
@@ -155,8 +218,9 @@ class Maybe(Generic[T]):
         Applies a Maybe function to another Maybe. If either Maybe has no
         value, then the result is a Maybe with no value.
 
-        Example:
-
+        -------
+        Example
+        -------
             >>> Maybe.just(lambda x: x + 1).amap(Maybe[int].just(1))
             Maybe.just(2)
 
@@ -168,6 +232,18 @@ class Maybe(Generic[T]):
 
             >>> Maybe().amap(Maybe())
             Maybe()
+
+        ----------
+        Parameters
+        ----------
+        other : Maybe[T]
+            The other Maybe.
+
+        -------
+        Returns
+        -------
+        Maybe[S]
+            A Maybe.
         """
         if self.value is type(self).sentinel:
             return type(self)()
@@ -181,17 +257,26 @@ class Maybe(Generic[T]):
         Helper function for mapping a function over a Maybe. The function
         should return a Maybe.
 
-        Example:
-
+        -------
+        Example
+        -------
             >>> Maybe.just(1).flatmap(lambda x: Maybe.just(x + 1))
             Maybe.just(2)
 
             >>> Maybe().flatmap(lambda x: Maybe.just(x + 1))
             Maybe()
 
-        :param f: The function to map.
+        ---------
+        Parameters
+        ---------
+        f : Callable[[T], Maybe[U]]
+            The function to map.
 
-        :return: Returns a Maybe.
+        -------
+        Returns
+        -------
+        Maybe[U]
+            A Maybe.
         """
         cls = type(self)
 
@@ -208,14 +293,23 @@ class Maybe(Generic[T]):
         """
         Flattens a nested Maybe.
 
-        Example:
-
+        -------
+        Example
+        -------
             >>> Maybe.just(Maybe.just(1)).join()
             Maybe.just(1)
 
             >>> Maybe.just(Maybe()).join()
             Maybe()
-        :return:
+
+            >>> Maybe().join()
+            Maybe()
+
+        -------
+        Returns
+        -------
+        Maybe[T]
+            A flattened Maybe.
         """
 
         cls = cast(type['Maybe[T]'], type(self))
@@ -231,7 +325,9 @@ class Maybe(Generic[T]):
         """
         Binds a function over the just value.
 
-        Example:
+        -------
+        Example
+        -------
 
             >>> Maybe.just(1).bind(lambda x: Maybe.just(x + 1))
             Maybe.just(2)
@@ -239,9 +335,17 @@ class Maybe(Generic[T]):
             >>> Maybe().bind(lambda x: Maybe.just(x + 1))
             Maybe()
 
-        :param f: The function to bind.
+        ----------
+        Parameters
+        ----------
+        f : Callable[[T], Maybe[U]]
+            The function to bind.
 
-        :return: Returns a Maybe.
+        -------
+        Returns
+        -------
+        Maybe[U]
+            A Maybe.
         """
 
         cls = type(self)
@@ -251,7 +355,45 @@ class Maybe(Generic[T]):
         else:
             return f(cast(T, self.value))
 
+    @overload
     def get_or_else(self, value: T, /) -> T:
+        """
+        Gets the value if is a just value. Otherwise, returns the provided
+
+        ----------
+        Parameters
+        ----------
+        value : T
+            The otherwise value.
+
+        Returns
+        -------
+        T
+            The value or the provided value.
+        """
+        ...
+
+    @overload
+    def get_or_else(self, value: Callable[[], T], /) -> T:
+        """
+        Gets the value if is a just value. Otherwise, invokes the provided
+        function. The function should return a value. Use this method if
+        the otherwise value is expensive to compute.
+
+        ----------
+        Parameters
+        ----------
+        value : Callable[[], T]
+            The callable that returns the otherwise value.
+
+        Returns
+        -------
+        T
+            The value or the provided by callback.
+        """
+        ...
+
+    def get_or_else(self, value: T | Callable[..., T], /) -> T:
         """
         Gets the value if is a just value. Otherwise, returns the provided
         value.
@@ -260,28 +402,56 @@ class Maybe(Generic[T]):
 
         :return: Returns the value or the provided value.
         """
-        cls = type(self)
-        if self.value is cls.sentinel:
+
+        if self.is_just():
+            return self.get()
+        elif isinstance(value, type(T)):
             return value
+        elif callable(value):
+            length = len(signature(value).parameters)
+            if length == 0:
+                return value()
+            elif length == 1:
+                return value(self)
+            else:
+                raise ValueError(
+                    "The provided value must be a callable with no parameters or a callable with one parameter."
+                )
         else:
-            return cast(T, self.value)
+            raise ValueError("The provided value must be a callable or a value.")
 
     @staticmethod
     def with_bool(present: bool, value: T) -> 'Maybe[T]':
         """
-        Creates a Maybe with a value if the present is True. Otherwise,
+        Returns an instance of the `Maybe` class. The `with_bool` method takes two arguments: a boolean value
+        `present` and a generic type `value`. If `present` is `True`, then the method returns an instance of `Maybe`
+        with the `value` as its content. Otherwise, it returns an empty instance of `Maybe`.
+
+        ----------
+        Parameters
+        ----------
+        present : bool
+            A boolean value that determines whether the `Maybe` instance should be empty or not.
+        value : T
+            A generic type that is the content of the `Maybe` instance if `present` is `True`.
+
+        Returns
+        -------
+        Maybe[T]
+            An instance of the `Maybe` class.
         """
         if present:
             return Maybe(value)
         else:
             return Maybe()
 
-    def __bool__(self, /) -> bool:
-        """
-        Returns True if the Maybe is a just value. Otherwise, returns False.
-        """
-        cls = type(self)
-        return self.value is not cls.sentinel
+
+def __bool__(self, /) -> bool:
+    """
+    Returns True if the Maybe is a just value. Otherwise, returns False.
+    """
+    cls = type(self)
+    return self.value is not cls.sentinel
 
 
 Nothing: Maybe[Any] = Maybe.nothing()
@@ -293,7 +463,9 @@ def none():
     optional values. You can also use the Nothing constant, which is
     equivalent to this function.
 
-    Example:
+    -------
+    Example
+    -------
 
         >>> none()
         Maybe()
@@ -304,23 +476,42 @@ def none():
         >>> none() == Nothing
         True
 
-    :return: Returns a Maybe with no value.
+        >>> none() is Nothing
+        True
+
+        >>> Maybe.nothing() == Nothing
+
+    -------
+    Returns
+    -------
+    Maybe[Any]
+        A Maybe with no value.
     """
     return Nothing
 
 
-def just(value):
+def just(value: T):
     """
     Creates a Maybe with a value.
 
-    Example:
+    -------
+    Example
+    -------
 
         >>> just(1)
         Maybe.just(1)
 
-    :param value: The value.
+    ----------
+    Parameters
+    ----------
+    value : T
+        The value.
 
-    :return: Returns a Maybe with a value.
+    -------
+    Returns
+    -------
+    Maybe[T]
+        A Maybe with a value.
     """
     return Maybe.just(value)
 
@@ -330,7 +521,9 @@ def optional(value):
     Creates a Maybe with a value if the value is not None. Otherwise,
     returns a Maybe with no value.
 
-    Example:
+    -------
+    Example
+    -------
 
         >>> optional(1)
         Maybe.just(1)
@@ -338,9 +531,17 @@ def optional(value):
         >>> optional(None)
         Maybe()
 
-    :param value: The value.
+    ----------
+    Parameters
+    ----------
+    value : T
+        The value.
 
-    :return: Returns a Maybe with a value or no value.
+    -------
+    Returns
+    -------
+    Maybe[T]
+        A Maybe with a value or no value.
     """
     if value is None:
         return Nothing
