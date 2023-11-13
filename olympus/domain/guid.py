@@ -19,7 +19,15 @@ import uuid
 class Guid:
     """
     This class represents a GUID. It is used to identify an entity.
+
+    ----------
+    Attributes
+    ----------
+    value : str
+        The string value of the GUID.
     """
+
+    value: str
 
     @classmethod
     def new(cls) -> 'Guid':
