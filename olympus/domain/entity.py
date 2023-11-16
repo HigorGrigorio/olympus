@@ -49,7 +49,7 @@ class Entity(Generic[E]):
     """
 
     def __init__(self, props: E, id: Maybe[Guid]):
-        self.id = id.get() if id else Guid.new()
+        self.id = id.get_or_else(Guid.new)
         self.props = props
 
     def get_props(self) -> E:
