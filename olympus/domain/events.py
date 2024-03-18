@@ -168,7 +168,7 @@ class EventBus:
         :param agg: The aggregate.
         """
 
-        if agg.get_id() in EventBus.__marked__:
+        if agg.get_id() not in EventBus.__marked__:
             EventBus.__marked__.append(agg.get_id())
 
     @staticmethod
