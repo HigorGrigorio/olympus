@@ -145,7 +145,16 @@ class Maybe(Generic[T]):
         T
             The value.
         """
-        return self.get()
+
+        if self.is_just():
+            value = self.get()
+
+            if hasattr(value, '__next__'):
+                return next(value)
+
+            return value
+        else:
+            raise MissingValueError()
 
     def __eq__(self, other):
         """ Two Maybe are equal if they are both just or nothing and have the same value. """

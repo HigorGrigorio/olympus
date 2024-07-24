@@ -139,8 +139,14 @@ class Either(Generic[L, R]):
         Allows the Either to be used in a for loop.
         """
         if self.is_right:
-            return self.value
-        raise StopIteration
+            value = self.value
+
+            # if the value is an iterable, yield each item
+            if hasattr(value, '__iter__'):
+                for item in value:
+                    yield item
+            else:
+                yield value
 
 
 def left(value: L) -> Either[L, R]:

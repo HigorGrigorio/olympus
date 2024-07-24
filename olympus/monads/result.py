@@ -48,14 +48,28 @@ class Result(Generic[T]):
     def __iter__(self):
         """ Allows the Result to be used in a for loop. """
         if self.is_ok:
-            yield self.value
+            value = self.value
+
+            # if value is iterable, return each item
+            if hasattr(value, '__iter__'):
+                for item in value:
+                    yield item
+
+            yield value
 
         raise StopIteration
 
     def __next__(self):
         """ Allows the Result to be used in a for loop. """
         if self.is_ok:
-            return self.value
+            value = self.value
+
+            # if value is iterable, return each item
+            if hasattr(value, '__iter__'):
+                for item in value:
+                    yield item
+
+            yield value
 
         raise StopIteration
 
