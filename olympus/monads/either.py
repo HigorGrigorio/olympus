@@ -26,7 +26,7 @@ Example:
     False
 """
 
-from typing import Generic, TypeVar, Callable, Any
+from typing import Generic, TypeVar, Callable
 
 L = TypeVar('L')
 R = TypeVar('R')
@@ -126,6 +126,13 @@ class Either(Generic[L, R]):
         Gets the right value. Raises an exception if the value is left.
         """
         return self.value
+
+    def __iter__(self):
+        """
+        Allows the Either to be used in a for loop.
+        """
+        if self.is_right:
+            yield self.value
 
 
 def left(value: L) -> Either[L, R]:

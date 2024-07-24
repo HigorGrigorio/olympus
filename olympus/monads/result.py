@@ -45,6 +45,13 @@ class Result(Generic[T]):
         """ Allows the Result to be used in a boolean expression. """
         return self.is_ok
 
+    def __iter__(self):
+        """ Allows the Result to be used in a for loop. """
+        if self.is_ok:
+            yield self.value
+
+        raise StopIteration
+
     def __repr__(self):
         if self.is_ok:
             return f'Result.ok({self.value})'

@@ -77,6 +77,47 @@ class Maybe(Generic[T]):
         else:
             return f"Maybe.just({self.value!r})"
 
+    def __bool__(self, /) -> bool:
+        """
+        Returns True if the Maybe is a just value. Otherwise, returns False.
+        """
+        cls = type(self)
+        return self.value is not cls.sentinel
+
+    def __iter__(self):
+        """
+        Returns an iterator over the value if is a just value. Otherwise, raises a exception.
+
+        -------
+        Example
+        -------
+
+            >>> list(Maybe.just(1))
+            [1]
+
+            >>> list(Maybe())
+            Traceback (most recent call last):
+            ...
+
+        ------
+        Raises
+        ------
+        MissingValueError
+            If the Maybe has no value.
+
+        -------
+        Returns
+        -------
+        Iterator[T]
+            An iterator over the value.
+        """
+        cls = type(self)
+
+        if self.value is cls.sentinel:
+            raise MissingValueError()
+
+        return iter([cast(T, self.value)])
+
     def __eq__(self, other):
         """ Two Maybe are equal if they are both just or nothing and have the same value. """
         return self.is_just() == other.is_just() and self.value == other.value
