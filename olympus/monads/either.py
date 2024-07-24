@@ -134,6 +134,14 @@ class Either(Generic[L, R]):
         if self.is_right:
             yield self.value
 
+    def __next__(self):
+        """
+        Allows the Either to be used in a for loop.
+        """
+        if self.is_right:
+            return self.value
+        raise StopIteration
+
 
 def left(value: L) -> Either[L, R]:
     """

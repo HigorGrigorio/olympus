@@ -118,6 +118,35 @@ class Maybe(Generic[T]):
 
         return iter([cast(T, self.value)])
 
+    def __next__(self):
+        """
+        Returns the value if is a just value. Otherwise, raises a exception.
+
+        -------
+        Example
+        -------
+
+            >>> next(Maybe.just(1))
+            1
+
+            >>> next(Maybe())
+            Traceback (most recent call last):
+            ...
+
+        ------
+        Raises
+        ------
+        MissingValueError
+            If the Maybe has no value.
+
+        -------
+        Returns
+        -------
+        T
+            The value.
+        """
+        return self.get()
+
     def __eq__(self, other):
         """ Two Maybe are equal if they are both just or nothing and have the same value. """
         return self.is_just() == other.is_just() and self.value == other.value

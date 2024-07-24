@@ -52,6 +52,13 @@ class Result(Generic[T]):
 
         raise StopIteration
 
+    def __next__(self):
+        """ Allows the Result to be used in a for loop. """
+        if self.is_ok:
+            return self.value
+
+        raise StopIteration
+
     def __repr__(self):
         if self.is_ok:
             return f'Result.ok({self.value})'
