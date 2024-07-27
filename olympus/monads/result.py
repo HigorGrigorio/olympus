@@ -35,7 +35,7 @@ S = TypeVar('S')
 
 
 class Result(Generic[T]):
-    def __init__(self, is_ok: bool, value: T = None, error: str | Exception | T = None):
+    def __init__(self, is_ok: bool, value: T = T, error: str | Exception | T = None):
         self.value = value
         self.error = error
         self.is_ok = is_ok
