@@ -484,8 +484,6 @@ class Maybe(Generic[T]):
 
         if self.is_just():
             return self.get()
-        elif isinstance(value, type(T)):
-            return value
         elif callable(value):
             length = len(signature(value).parameters)
             if length == 0:
@@ -497,7 +495,7 @@ class Maybe(Generic[T]):
                     "The provided value must be a callable with no parameters or a callable with one parameter."
                 )
         else:
-            raise ValueError("The provided value must be a callable or a value.")
+            return value
 
     @staticmethod
     def with_bool(present: bool, value: T) -> 'Maybe[T]':
